@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IELTS Academic Reading Master Practice Engine</title>
+    <style>
+        :root {
+            --primary-color: #00718f;
+            --secondary-color: #f4f6f8;
+            --text-color: #333;
+            --border-color: #ddd;
+            --success-color: #5cb85c;
+            --danger-color: #d9534f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            color: var(--text-color);
+            background-color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Overlays Layout */
+        .overlay-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            border-top: 8px solid var(--primary-color);
+        }
+
+        .modal-box h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .modal-box p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .modal-box ul {
+            text-align: left;
+            margin: 20px 0;
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .modal-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .btn-action {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #00566d;
+        }
+
+        #score-screen {
+            display: none;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        #score-screen .modal-box {
+            border-top: 8px solid var(--success-color);
+        }
+
+        .score-highlight {
+            font-size: 28px !important;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 15px 0 !important;
+        }
+
+        /* Header Components */
+        header {
+            background: var(--secondary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+        }
+
+        .test-title {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-submit {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-download {
+            display: none;
+            background: var(--success-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Main Workspace Split Screen */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .part-container {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .part-container.active {
+            display: flex;
+        }
+
+        .passage-side {
+            width: 50%;
+            padding: 25px;
+            overflow-y: auto;
+            border-right: 2px solid var(--border-color);
+            line-height: 1.7;
+            background: #fff;
+        }
+
+        .passage-side h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .passage-side p {
+            margin-bottom: 18px;
+            text-align: justify;
+        }
+
+        .question-side {
+            width: 50%;
+            padding: 25px;
+            overflow-y: auto;
+            background: #fafafa;
+            padding-bottom: 80px;
+        }
+
+        /* Question Formats */
+        .question-block {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .question-group-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #444;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+            font-size: 16px;
+        }
+
+        .q-row {
+            margin-bottom: 18px;
+        }
+
+        .q-main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .q-text-inline {
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .q-num {
+            font-weight: bold;
+            min-width: 30px;
+            margin-top: 2px;
+        }
+
+        .q-input-text {
+            width: 160px;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin: 0 5px;
+            font-size: 14px;
+        }
+
+        .options-list {
+            margin-left: 30px;
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        .option-item {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Diagram Component Graphic Styling */
+        .diagram-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            margin: 20px auto;
+            background: #fff;
+            border: 1px dashed #bbb;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .diagram-input-container {
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .diagram-input-row {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Explanation Component Layout UI */
+        .explanation-box {
+            display: none;
+            background-color: #f1f5f9;
+            border-left: 4px solid #64748b;
+            padding: 12px;
+            margin-top: 10px;
+            margin-left: 30px;
+            border-radius: 4px;
+            font-size: 13.5px;
+            line-height: 1.5;
+            color: #334155;
+            width: calc(100% - 30px);
+        }
+
+        .explanation-box strong {
+            color: var(--primary-color);
+        }
+
+        /* Bottom Fixed Footer Component Control */
+        footer {
+            background: var(--secondary-color);
+            border-top: 1px solid var(--border-color);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 50px;
+            position: relative;
+            z-index: 100;
+        }
+
+        #timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--danger-color);
+            background: #fff;
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-nav {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-nav:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Review Audit Configurations Styles Override */
+        .review-mode input, .review-mode select {
+            pointer-events: none;
+            background-color: #e2e8f0 !important;
+        }
+        .review-mode .explanation-box {
+            display: block;
+        }
+        .correct-ans {
+            color: green;
+            font-weight: bold;
+            margin-top: 5px;
+            font-size: 14px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Intro Welcome Panel Screen -->
+    <div id="start-screen" class="overlay-screen">
+        <div class="modal-box">
+            <h1>IELTS Academic Reading Examination</h1>
+            <p><strong>Duration:</strong> 60 minutes | <strong>Format:</strong> 3 Extended Passages</p>
+            <ul>
+                <li>Read the passages and answer all 40 questions carefully.</li>
+                <li>The countdown timer starts immediately after clicking the button below.</li>
+                <li>After submission, you will receive your band score and detailed explanations.</li>
+            </ul>
+            <input type="text" id="candidate-name" placeholder="Enter your full name here..." required>
+            <button class="btn-action" onclick="startTest()">Start Test</button>
+        </div>
+    </div>
+
+    <!-- Score Reports Overlay Modals UI -->
+    <div id="score-screen" class="overlay-screen">
+        <div class="modal-box">
+            <h1>Examination Performance Report</h1>
+            <p>Candidate: <strong id="score-candidate-name">Thí sinh</strong></p>
+            <p class="score-highlight" id="score-raw-out">Result: 0 / 40</p>
+            <p style="font-size: 20px; margin-bottom: 25px;">Estimated IELTS Band Score: <strong id="score-band-out" style="color: #5cb85c;">0.0</strong></p>
+            <button class="btn-action" style="background: #5cb85c;" onclick="closeScoreScreen()">Review Test & Explanations</button>
+        </div>
+    </div>
+
+    <!-- Top Fixed Sticky Headers Bar -->
+    <header>
+        <div class="test-title">IELTS Reading Practice Component (<span id="display-name">Guest</span>)</div>
+        <div class="header-controls">
+            <button id="btn-download" class="btn-download" onclick="downloadHTML()">Download Results</button>
+            <button id="btn-submit" class="btn-submit" onclick="submitTest(false)">Submit Test</button>
+        </div>
+    </header>
+
+    <!-- Main Container Content Workspace Space Layout -->
+    <div class="main-container">
+
+        <!-- ================= PART 1 ================= -->
+        <div id="part1" class="part-container active">
+            <div class="passage-side">
+                <h2>READING PASSAGE 1: Marine Architecture of Coral Polyps</h2>
+                <p><strong>A.</strong> Coral reefs are among the most complex and biologically diverse ecosystems on Earth, frequently referred to as the "rainforests of the sea." Although they occupy less than 0.1% of the planet's ocean surface, they support roughly a quarter of all marine life. Yet, the foundational biological units responsible for creating these massive structures are tiny, soft-bodied organisms known as coral polyps. These miniature organisms live in vast colonies and function as the primary structural engineers of the marine underworld.</p>
+                <p><strong>B.</strong> Each individual polyp is structurally simplistic yet evolutionarily sophisticated. It possesses a tube-like body terminating in a central mouth opening, which is ringed by a crown of stinging tentacles used primarily for defense and capturing microscopic prey. The lower base of the polyp's body secretes a rigid skeleton composed of calcium carbonate. Over successive generations, thousands of polyps fuse their hard exoskeletons together, forming the bedrock upon which living coral structures slowly grow.</p>
+                <p><strong>C.</strong> Most reef-building corals maintain a strict symbiotic relationship with microscopic algae called zooxanthellae, which reside inside the polyp's cellular tissues. These photosynthetic organisms convert sunlight into energy, delivering vital nutrients directly to the host polyp. In return, the polyp supplies the algae with carbon dioxide and metabolic waste materials essential for photosynthesis. This relationship dictates that reefs can only flourish in clear, sunlit, shallow waters.</p>
+                <p><strong>D.</strong> The physical anatomy of a solitary polyp can be segmented into distinct functional zones. The exterior ring of tentacles possesses specialized cells called nematocysts. These cells contain microscopic coiled barbs that can rapidly deploy paralyzing toxins upon contact with drifting zooplankton. Once immobilized, food particles are funneled through the mouth down into the gastrovascular cavity, a specialized blind gut sac responsible for nutrient digestion and distribution.</p>
+                <p><strong>E.</strong> Beneath the cellular layers of the gastrovascular cavity lies the basal plate, the specific anatomical zone where calcium carbonate crystals are synthesized and deposited. This calcification process occurs predominantly at night, as the polyp draws calcium ions directly from seawater and transforms them into solid aragonite. This continuous architectural expansion builds the complex vertical ridges that safeguard coastal boundaries from wave erosion.</p>
+                <p><strong>F.</strong> Environmental changes pose an immediate danger to this anatomical system. If sea temperatures rise even slightly, the internal zooxanthellae begin producing toxic compounds instead of nutrients. In response, the stressed coral polyp expels the algae entirely from its tissues, exposing the white calcium carbonate skeleton underneath. This catastrophic phenomenon is widely documented as coral bleaching, which leaves polyps highly vulnerable to starvation and disease.</p>
+                <p><strong>G.</strong> Beyond thermal stress, coastal sedimentation and pollution run-off can smother polyp colonies, preventing sunlight from reaching the internal algae networks. Marine biologists emphasize that understanding the fine micro-anatomical structures of polyps is essential for designing coral cultivation strategies, which aim to restore global reef populations facing rapid decline.</p>
+            </div>
+            <div class="question-side">
+                <div class="question-block">
+                    <div class="question-group-title">Questions 1-7: True, False, Not Given</div>
+                    
+                    <div class="q-row" id="block-q1">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">1</span><div><span>Coral reefs support approximately 25% of all oceanic living species.</span><br><select id="q1" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn A ghi rõ: <i>"...they support roughly a quarter of all marine life."</i> (Một phần tư tương đương với 25%). Do đó câu này đúng (TRUE).</div>
+                    </div>
+                    
+                    <div class="q-row" id="block-q2">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">2</span><div><span>Individual coral polyps possess rigid bone structures inside their soft bodies prior to colony formation.</span><br><select id="q2" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn A định nghĩa polyps là <i>"soft-bodied organisms"</i> (sinh vật thân mềm). Bộ xương đá vôi được chúng tiết ra bên ngoài cấu trúc cơ thể sau đó chứ không phải cấu trúc xương cứng có sẵn bên trong trước khi kết tụ. Do đó chọn FALSE.</div>
+                    </div>
+                    
+                    <div class="q-row" id="block-q3">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">3</span><div><span>Zooxanthellae utilize the respiratory waste products of coral polyps to perform photosynthesis.</span><br><select id="q3" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn C đề cập: <i>"In return, the polyp supplies the algae with carbon dioxide and metabolic waste materials essential for photosynthesis."</i> Tảo nhận chất thải chuyển hóa và CO2 từ polyp để quang hợp. Đáp án: TRUE.</div>
+                    </div>
+                    
+                    <div class="q-row" id="block-q4">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">4</span><div><span>Nematocysts are predominantly located within the basal plate area of the organism.</span><br><select id="q4" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn D chỉ rõ nematocysts nằm ở vòng xúc tu bên ngoài: <i>"The exterior ring of tentacles possesses specialized cells called nematocysts."</i> chứ không phải nằm tại lớp móng basal plate. Đáp án: FALSE.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q5">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">5</span><div><span>Polyps accelerate their calcification activities during peak daylight hours.</span><br><select id="q5" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn E khẳng định: <i>"This calcification process occurs predominantly at night..."</i> (quá trình vôi hóa này diễn ra chủ yếu vào ban đêm), ngược lại hoàn toàn với mệnh đề "daylight hours". Đáp án: FALSE.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q6">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">6</span><div><span>Coral bleaching is a permanent mutation that transforms zooxanthellae into predatory organisms.</span><br><select id="q6" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn F giải thích hiện tượng tẩy trắng là do polyp trục xuất tảo ra khỏi mô tế bào do bị stress nhiệt độ môi trường (<i>"expels the algae entirely from its tissues"</i>), không hề nói về việc biến đổi cấu trúc gene thành sinh vật ăn thịt. Đáp án: FALSE.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q7">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">7</span><div><span>Artificial reef programs have successfully restored half of the world's damaged coral systems.</span><br><select id="q7" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn G chỉ nói việc các nhà khoa học đang nỗ lực nghiên cứu micro-anatomy nhằm thiết kế chiến lược nuôi cấy phục hồi (<i>"aim to restore global reef populations facing rapid decline"</i>), bài đọc hoàn toàn không đưa ra thông số dữ liệu nào chứng minh đã hồi phục thành công một nửa (half). Đáp án: NOT GIVEN.</div>
+                    </div>
+                </div>
+
+                <div class="question-block">
+                    <div class="question-group-title">Questions 8-13: Label the Diagram Below</div>
+                    <p style="margin-bottom: 10px; font-style: italic;">Choose ONE WORD ONLY from the passage for each answer.</p>
+                    
+                    <div class="diagram-wrapper">
+                        <svg viewBox="0 0 400 280" width="100%" height="100%">
+                            <path d="M 120 180 L 120 240 Q 200 260 280 240 L 280 180" fill="none" stroke="#333" stroke-width="2"/>
+                            <path d="M 120 180 Q 90 120 110 90 Q 120 120 135 180" fill="#e6f2ff" stroke="#333" stroke-width="1.5"/>
+                            <path d="M 145 180 Q 140 100 160 80 Q 170 110 175 180" fill="#e6f2ff" stroke="#333" stroke-width="1.5"/>
+                            <path d="M 225 180 Q 230 100 250 80 Q 260 110 255 180" fill="#e6f2ff" stroke="#333" stroke-width="1.5"/>
+                            <path d="M 265 180 Q 310 120 290 90 Q 280 120 280 180" fill="#e6f2ff" stroke="#333" stroke-width="1.5"/>
+                            <ellipse cx="200" cy="180" rx="20" ry="8" fill="none" stroke="#333" stroke-width="2"/>
+                            <path d="M 160 190 C 160 230, 240 230, 240 190" fill="none" stroke="#555" stroke-width="1.5" stroke-dasharray="4"/>
+                            <line x1="120" y1="240" x2="280" y2="240" stroke="#444" stroke-width="4"/>
+                            
+                            <path d="M 60 100 L 105 105" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="20" y="103" fill="red" font-weight="bold">8</text>
+                            <path d="M 340 100 L 295 105" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="350" y="103" fill="red" font-weight="bold">9</text>
+                            <path d="M 200 140 L 200 170" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="195" y="135" fill="red" font-weight="bold">10</text>
+                            <path d="M 60 210 L 175 210" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="20" y="214" fill="red" font-weight="bold">11</text>
+                            <path d="M 340 240 L 260 241" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="350" y="244" fill="red" font-weight="bold">12</text>
+                            <path d="M 200 270 L 200 245" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="192" y="278" fill="red" font-weight="bold">13</text>
+
+                            <defs>
+                                <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 2 L 10 5 L 0 8 z" fill="red"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                    </div>
+
+                    <div class="diagram-input-container">
+                        <div class="q-row" id="block-q8"><div class="q-main-content"><div class="diagram-input-row"><strong>[8] Outer Ring Area:</strong> <input type="text" id="q8" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn B chỉ ra phần cấu trúc vòng xúc tu bảo vệ bao quanh miệng: <i>"...mouth opening, which is ringed by a crown of stinging <b>tentacles</b>..."</i></div></div>
+                        <div class="q-row" id="block-q9"><div class="q-main-content"><div class="diagram-input-row"><strong>[9] Stinging Cells:</strong> <input type="text" id="q9" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn D chỉ ra tên các tế bào tự vệ phóng độc trên xúc tu: <i>"The exterior ring of tentacles possesses specialized cells called <b>nematocysts</b>."</i></div></div>
+                        <div class="q-row" id="block-q10"><div class="q-main-content"><div class="diagram-input-row"><strong>[10] Central Feed Opening:</strong> <input type="text" id="q10" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn B mô tả phần lỗ mở trung tâm cơ thể: <i>"...body terminating in a central <b>mouth</b> opening..."</i></div></div>
+                        <div class="q-row" id="block-q11"><div class="q-main-content"><div class="diagram-input-row"><strong>[11] Digestive Gut Sac Cavity:</strong> <input type="text" id="q11" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn D xác định khoang tiêu hóa thức ăn dạng túi: <i>"...food particles are funneled through the mouth down into the <b>gastrovascular</b> cavity..."</i></div></div>
+                        <div class="q-row" id="block-q12"><div class="q-main-content"><div class="diagram-input-row"><strong>[12] Lower Secreting Zone:</strong> <input type="text" id="q12" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn E mô tả lớp đĩa móng nền tổng hợp tinh thể cacbonat: <i>"Beneath the cellular layers... lies the <b>basal</b> plate, the specific anatomical zone..."</i></div></div>
+                        <div class="q-row" id="block-q13"><div class="q-main-content"><div class="diagram-input-row"><strong>[13] Outer Carbonate Structure:</strong> <input type="text" id="q13" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn B mô tả bộ khung xương đá vôi do hàng ngàn con liên kết với nhau tạo ra: <i>"thousands of polyps fuse their hard <b>exoskeletons</b> together..."</i></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PART 2 ================= -->
+        <div id="part2" class="part-container">
+            <div class="passage-side">
+                <h2>READING PASSAGE 2: The Chronology of Machine Intelligence</h2>
+                <p><strong>Paragraph A:</strong> The human fascination with artificial constructs endowed with cognitive capabilities dates back thousands of years. Classical mythology contains multiple references to mechanical automatons, such as Talos, the bronze giant forged by Hephaestus to guard Crete. These early cultural narratives reflected a deep-seated human desire to replicate the mechanics of organic life using structural engineering paradigms developed by master craftsmen.</p>
+                <p><strong>Paragraph B:</strong> Formal transitions from philosophical musings to physical computational designs gained momentum during the Enlightenment. Thinkers like Gottfried Wilhelm Leibniz theorized that all human thought processes could potentially be broken down into discrete binary symbols, manageable by universal logical calculations. This foundational shift established the conceptual framework that complex mental operations were computational in nature.</p>
+                <p><strong>Paragraph C:</strong> The explicit birth of modern artificial intelligence occurred during an academic workshop at Dartmouth College in 1956. Organized by John McCarthy, the intensive conference brought together brilliant minds who pioneered the field. The overarching atmosphere was overwhelmingly optimistic; attendees confidently predicted that systems matching human intelligence could be manufactured within a single generation.</p>
+                <p><strong>Paragraph D:</strong> This initial era of optimism triggered a massive influx of military and government financing. Early programs successfully designed algorithms capable of solving complex geometric theorems and mastering basic strategy games. Funding agencies, such as ARPA, injected millions of dollars into undirected research spaces, convinced that automated translation and machine reasoning would be achieved in short order.</p>
+                <p><strong>Paragraph E:</strong> By the early 1970s, the limits of early computational architectures became painfully obvious. Machines lacked the processing power and memory capacity to manage combinatorial explosions—scenarios where structural problems expanded exponentially beyond available memory tracking spaces. Systems failed to parse basic nuances of human language translations, causing significant frustration.</p>
+                <p><strong>Paragraph F:</strong> High-level bureaucratic pushback arrived swiftly. In 1973, the British government commissioned the Lighthill Report, which delivered a devastating critique of the AI field, stating that researchers' claims were gross exaggerations. Concurrently, the US Congress cut off funding for machine intelligence projects that lacked explicit military defense applications. This convergence marked the onset of the first "AI Winter."</p>
+                <p><strong>Paragraph G:</strong> During this winter phase, which lasted nearly a decade, public interest plummeted, and academic labs were abandoned. Researchers faced intense professional skepticism, forcing many to re-brand their work as "expert systems" or "advanced database logic" to secure minimal funding. The institutional freeze highlighted the dangers of mismatched expectations in technical engineering fields.</p>
+                <p><strong>Paragraph H:</strong> The field emerged from stagnation in the 1980s via the commercialization of expert systems—software designed to mimic the decision-making matrices of human specialists. Companies embraced these targeted corporate frameworks, triggering a brief revival until specialized hardware limitations once again led to market corrections, establishing a pattern of cyclical development cycles.</p>
+            </div>
+            <div class="question-side">
+                <div class="question-block">
+                    <div class="question-group-title">Questions 14-20: Paragraph Heading Matching</div>
+                    <div style="background: #eee; padding: 12px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; line-height: 1.6;">
+                        i. The structural limits of early processing engines<br>
+                        ii. Mythological roots and early automated narratives<br>
+                        iii. An institutional freeze and sudden loss of backing<br>
+                        iv. The commercialization of specialist software systems<br>
+                        v. Mathematical formulations and logic symbols tracking<br>
+                        vi. The official convention establishing the discipline<br>
+                        vii. Unrestricted resource allocation and early successes
+                    </div>
+                    
+                    <div class="q-row" id="block-q14"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph A</span><select id="q14" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn A mô tả về thần thoại cổ đại (<i>"Classical mythology"</i>) và câu chuyện về người đồng khổng lồ Talos, khớp chính xác tiêu đề **ii**.</div></div>
+                    <div class="q-row" id="block-q15"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph B</span><select id="q15" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn B nói về Leibniz và việc chuyển đổi tư duy con người thành các ký hiệu toán học nhị phân (<i>"discrete binary symbols"</i>), khớp tiêu đề **v**.</div></div>
+                    <div class="q-row" id="block-q16"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph C</span><select id="q16" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn C nói về hội thảo học thuật chính thức tại trường Dartmouth vào năm 1956 giúp thành lập ngành (<i>"workshop held at Dartmouth College... founded the field"</i>), khớp tiêu đề **vi**.</div></div>
+                    <div class="q-row" id="block-q17"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph D</span><select id="q17" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn D mô tả việc chính phủ đổ tiền tài trợ không giới hạn và các thành công ban đầu của thuật toán hình học/cờ chiến thuật (<i>"massive influx of military and government financing... early programs successfully designed algorithms..."</i>), khớp tiêu đề **vii**.</div></div>
+                    <div class="q-row" id="block-q18"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph E</span><select id="q18" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn E bàn luận về các giới hạn phần cứng máy tính thời kỳ đầu, không đủ sức tải lượng dữ liệu bùng nổ (<i>"limits of early computational architectures... combinatorial explosions"</i>), khớp tiêu đề **i**.</div></div>
+                    <div class="q-row" id="block-q19"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph F</span><select id="q19" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn F chỉ ra việc quốc hội Mỹ và chính phủ Anh cắt toàn bộ ngân sách nghiên cứu tự do, gây ra kỷ băng hà AI thứ nhất (<i>"cut off funding... marked the onset of the first AI Winter"</i>), khớp tiêu đề **iii**.</div></div>
+                    <div class="q-row" id="block-q20"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph G</span><select id="q20" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn G tiếp tục phân tích giai đoạn suy thoái đóng băng kéo dài cả thập kỷ này (<i>"During this winter phase... institutional freeze"</i>). Tiêu đề thích hợp nhất vẫn là cụm đóng băng tài trợ: **iii**.</div></div>
+                </div>
+
+                <div class="question-block">
+                    <div class="question-group-title">Questions 21-26: Multiple Choice Questions</div>
+                    
+                    <div class="q-row" id="block-q21"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">21</span><div><span>Who coordinated the foundational 1956 workshop at Dartmouth College?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q21" value="A"> A. Gottfried Leibniz</div>
+                            <div class="option-item"><input type="radio" name="q21" value="B"> B. John McCarthy</div>
+                            <div class="option-item"><input type="radio" name="q21" value="C"> C. James Lighthill</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn C ghi rõ người đứng ra tổ chức hội thảo danh tiếng năm 1956: <i>"Organized by John McCarthy, the intensive conference..."</i> Do đó đáp án là B.</div></div>
+                    
+                    <div class="q-row" id="block-q22"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">22</span><div><span>What problem prevented early machines from solving complex expandable logical matrices?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q22" value="A"> A. Combinatorial explosions</div>
+                            <div class="option-item"><input type="radio" name="q22" value="B"> B. Hardware thermal melting</div>
+                            <div class="option-item"><input type="radio" name="q22" value="C"> C. Failure of logic programming languages</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn E khẳng định: <i>"Machines lacked the processing power and memory capacity to manage combinatorial explosions..."</i> Do đó đáp án là A.</div></div>
+
+                    <div class="q-row" id="block-q23"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">23</span><div><span>What did the Lighthill Report argue regarding academic AI research claims?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q23" value="A"> A. They were entirely precise and accurate</div>
+                            <div class="option-item"><input type="radio" name="q23" value="B"> B. They were gross exaggerations lacking evidence</div>
+                            <div class="option-item"><input type="radio" name="q23" value="C"> C. They required instant dual military upgrades</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn F ghi nhận báo cáo chỉ trích gay gắt: <i>"...stating that researchers' claims were gross exaggerations."</i> Do đó đáp án là B.</div></div>
+
+                    <div class="q-row" id="block-q24"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">24</span><div><span>Why did researchers re-brand their scientific projects during the winter phase?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q24" value="A"> A. To secure minimal funding from hesitant agencies</div>
+                            <div class="option-item"><input type="radio" name="q24" value="B"> B. To shift their focus into consumer mobile applications</div>
+                            <div class="option-item"><input type="radio" name="q24" value="C"> C. To comply with newly established biological regulations</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn G giải thích: <i>"...forcing many to re-brand their work as 'expert systems'... to secure minimal funding."</i> Do đó đáp án là A.</div></div>
+
+                    <div class="q-row" id="block-q25"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">25</span><div><span>The commercial expansion of AI systems in the 1980s was driven by which framework?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q25" value="A"> A. Deep neural network image processing</div>
+                            <div class="option-item"><input type="radio" name="q25" value="B"> B. Commercialization of expert systems</div>
+                            <div class="option-item"><input type="radio" name="q25" value="C"> C. Open-source global database networks</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn H ghi rõ xu hướng phục hồi thập niên 80: <i>"...via the commercialization of expert systems..."</i> Do đó đáp án là B.</div></div>
+
+                    <div class="q-row" id="block-q26"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">26</span><div><span>The historical evolution of machine intelligence demonstrates a pattern of:</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q26" value="A"> A. Continuous smooth exponential progress</div>
+                            <div class="option-item"><input type="radio" name="q26" value="B"> B. Cyclical development phases driven by expectations</div>
+                            <div class="option-item"><input type="radio" name="q26" value="C"> C. Sudden static termination after 1990</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn H kết luận về tính chất chu kỳ của AI: <i>"...establishing a pattern of cyclical development cycles."</i> Do đó đáp án là B.</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PART 3 ================= -->
+        <div id="part3" class="part-container">
+            <div class="passage-side">
+                <h2>READING PASSAGE 3: The Evolutionary Mechanics of Human Language</h2>
+                <p><strong>A.</strong> The emergence of sophisticated language represents one of the most transformative milestones in the evolutionary trajectory of Homo sapiens. While basic communication channels permeate the entirety of the animal kingdom—ranging from the intricate chemical markers of social insects to the regional vocalizations of cetaceans—human speech is uniquely characterized by a property known as recursion or discrete infinity. This structural capacity allows a speaker to combine a finite pool of phonetic building blocks into an infinite array of meaningful, nested syntax expressions.</p>
+                <p><strong>B.</strong> Historically, the origin of this cognitive facility has ignited fierce ideological rifts across scientific landscapes. The dominant paradigm throughout the late twentieth century was anchored in gradualism, a perspective championed by evolutionary biologists who viewed language as an incremental adaptation. Proponents of this school argue that speech developed slowly over hundreds of thousands of years, driven by adaptive selection pressures that favored heightened coordination during group hunting activities and complex social networking sessions within expanding tribal frameworks.</p>
+                <p><strong>C.</strong> Physical anthropologists working within the gradualist framework point toward historical modifications in skeletal fossil configurations as structural proofs. The gradual descent of the hominid larynx, paired with mutations in jaw geometry, expanded the vocal tract's physical capacity to articulate diverse ranges of phonetic sounds. Furthermore, the expansion of cranial capacities inside fossil skulls was interpreted as a sign of continuous neural expansion dedicated to processing rudimentary communication structures.</p>
+                <p><strong>D.</strong> However, this slow adaptation model faces fierce opposition from contemporary cognitive scientists who support the saltation or "sudden leap" hypothesis. This counter-theory asserts that human language did not emerge through slow modifications; rather, it appeared abruptly. Researchers hypothesize that a singular, spontaneous genetic mutation occurred approximately 50,000 years ago, instantly re-wiring the cognitive architecture of the brain and giving birth to the internal language facility without transitional operational stages.</p>
+                <p><strong>E.</strong> This abrupt emergence theory is heavily supported by the archaeological record. For hundreds of millennia prior to this historical flashpoint, hominid tools remained static, showing minimal innovation or artistic expression. Then, roughly 50,000 years ago, a dramatic behavioral explosion occurred. Archeologists uncovered sudden appearances of complex cave paintings, intricate musical instruments, long-distance trade networks, and sophisticated burial sites. This cultural shift is viewed as direct evidence of a newly acquired symbolic thought capacity driven by inner speech logic.</p>
+                <p><strong>F.</strong> Central to this sudden transformation is the FOXP2 gene, frequently labeled by media networks as the "language gene." Genetic sequencing reveals that while variants of this specific gene exist across many mammalian groups, the human variant underwent two critical amino acid mutations within a very tight evolutionary window. Clinical trials show that modern individuals with defective FOXP2 profiles struggle with complex linguistic structures, highlighting its role in human speech facility.</p>
+                <p><strong>G.</strong> Despite these discoveries, the debate is far from resolved. Modern evolutionary theorists are increasingly pursuing a synthetic view that bridges both paradigms. They suggest that while the physical vocal equipment required for basic vocalizations evolved over long periods through natural selection, the advanced cognitive engine responsible for nesting complex phrases may have clicked into place via a rapid genetic shift, creating the modern mind.</p>
+            </div>
+            <div class="question-side">
+                <div class="question-block">
+                    <div class="question-group-title">Questions 27-32: Multiple Choice Selection</div>
+                    
+                    <div class="q-row" id="block-q27"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">27</span><div><span>What structural property uniquely differentiates human language from animal communication?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q27" value="A"> A. Variable amplitude chemical markers</div>
+                            <div class="option-item"><input type="radio" name="q27" value="B"> B. Recursion or discrete infinity</div>
+                            <div class="option-item"><input type="radio" name="q27" value="C"> C. Ultrasonic frequency modification</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn A nêu rõ đặc tính chỉ loài người có: <i>"...human speech is uniquely characterized by a property known as recursion or discrete infinity."</i> Đáp án đúng: B.</div></div>
+                    
+                    <div class="q-row" id="block-q28"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">28</span><div><span>Gradualists argue that language evolution was accelerated by the survival benefit of:</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q28" value="A"> A. Better coordination during group hunting activities</div>
+                            <div class="option-item"><input type="radio" name="q28" value="B"> B. Advanced architectural construction skills</div>
+                            <div class="option-item"><input type="radio" name="q28" value="C"> C. Solitary meditation and self-reflection</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn B: <i>"...pressures that favored heightened coordination during group hunting activities..."</i> Đáp án đúng: A.</div></div>
+
+                    <div class="q-row" id="block-q29"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">29</span><div><span>What anatomical evidence do gradualists provide to reinforce their thesis?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q29" value="A"> A. The physical descent of the hominid larynx</div>
+                            <div class="option-item"><input type="radio" name="q29" value="B"> B. The widening structural framework of spinal cords</div>
+                            <div class="option-item"><input type="radio" name="q29" value="C"> C. Rapid alignment shifts in lower limb bones</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn C chỉ ra bằng chứng giải phẫu học: <i>"The gradual descent of the hominid larynx, paired with mutations in jaw geometry..."</i> Đáp án đúng: A.</div></div>
+
+                    <div class="q-row" id="block-q30"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">30</span><div><span>The saltation hypothesis asserts that the primary inner language engine emerged from:</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q30" value="A"> A. Millions of generations of progressive cultural training</div>
+                            <div class="option-item"><input type="radio" name="q30" value="B"> B. A singular, spontaneous genetic mutation</div>
+                            <div class="option-item"><input type="radio" name="q30" value="C"> C. Intensive interaction with domestic mammalian species</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn D định nghĩa thuyết nhảy vọt: <i>"Researchers hypothesize that a singular, spontaneous genetic mutation occurred..."</i> Đáp án đúng: B.</div></div>
+
+                    <div class="q-row" id="block-q31"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">31</span><div><span>According to Paragraph E, what archaeological discovery aligns with the sudden leap theory?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q31" value="A"> A. The appearance of complex cave drawings and musical tools</div>
+                            <div class="option-item"><input type="radio" name="q31" value="B"> B. Large-scale structural iron mining operations</div>
+                            <div class="option-item"><input type="radio" name="q31" value="C"> C. Completely unchanged stone hand-axes spanning millennia</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn E: <i>"Archeologists uncovered sudden appearances of complex cave paintings, intricate musical instruments..."</i> Đáp án đúng: A.</div></div>
+
+                    <div class="q-row" id="block-q32"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">32</span><div><span>What occurs to contemporary individuals who possess an impaired or defective FOXP2 profile?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q32" value="A"> A. They lose the physical ability to swallow solid objects</div>
+                            <div class="option-item"><input type="radio" name="q32" value="B"> B. They encounter significant difficulties parsing complex syntax</div>
+                            <div class="option-item"><input type="radio" name="q32" value="C"> C. They automatically develop sharper visual navigation skills</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn F chứng minh lâm sàng: <i>"Clinical trials show that modern individuals with defective FOXP2 profiles struggle with complex linguistic structures..."</i> Đáp án đúng: B.</div></div>
+                </div>
+
+                <div class="question-block">
+                    <div class="question-group-title">Questions 33-40: Yes, No, Not Given</div>
+                    
+                    <div class="q-row" id="block-q33">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">33</span><div><span>Animal communication shares the exact same recursive properties as human language.</span><br><select id="q33" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn A chỉ ra đây là điểm độc nhất của riêng con người (<i>"human speech is uniquely characterized by..."</i>), loài vật không có. Đáp án: NO.</div>
+                    </div>
+                    
+                    <div class="q-row" id="block-q34">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">34</span><div><span>Changes in jaw geometry allowed early humans to expand their range of phonetic expressions.</span><br><select id="q34" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn C xác nhận: <i>"...paired with mutations in jaw geometry, expanded the vocal tract's physical capacity to articulate diverse ranges of phonetic sounds."</i> Đáp án: YES.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q35">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">35</span><div><span>Hominid tools evolved rapidly and dynamically for 200,000 years before cave paintings appeared.</span><br><select id="q35" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn E phản bác: <i>"For hundreds of millennia prior to this historical flashpoint, hominid tools remained static, showing minimal innovation..."</i> (Công cụ giữ nguyên không đổi suốt hàng trăm ngàn năm chứ không phải tiến hóa nhanh chóng). Đáp án: NO.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q36">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">36</span><div><span>The human variant of the FOXP2 gene contains two unique mutations compared to other mammals.</span><br><select id="q36" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn F ghi nhận: <i>"...the human variant underwent two critical amino acid mutations within a very tight evolutionary window."</i> Đáp án: YES.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q37">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">37</span><div><span>The modern synthetic view completely rejects any contribution of gradual natural selection.</span><br><select id="q37" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn G nêu quan điểm tổng hợp kết hợp cả hai chứ không bài trừ: <i>"They suggest that while the physical vocal equipment... evolved over long periods through natural selection..."</i> Đáp án: NO.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q38">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">38</span><div><span>FOXP2 mutations occurred precisely in the geographic region of East Africa.</span><br><select id="q38" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Trong toàn bộ Đoạn F nói về đột biến FOXP2, bài đọc hoàn toàn không nhắc tới địa danh Đông Phi (East Africa). Đáp án: NOT GIVEN.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q39">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">39</span><div><span>Complex musical instruments were discovered inside hominid caves dating back one million years ago.</span><br><select id="q39" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn E khẳng định vụ nổ hành vi và nhạc cụ xuất hiện vào khoảng 50,000 năm trước (<i>"Then, roughly 50,000 years ago... intricate musical instruments..."</i>), không phải 1 triệu năm. Đáp án: NO.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q40">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">40</span><div><span>Linguists and biologists now agree completely on every facet of speech development history.</span><br><select id="q40" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn G khẳng định tranh luận vẫn chưa ngã ngũ: <i>"Despite these discoveries, the debate is far from resolved."</i> (Tranh biện còn lâu mới được giải quyết ổn thỏa). Đáp án: NO.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Fixed Status Footer Bar -->
+    <footer>
+        <div id="timer">60:00</div>
+        <div class="nav-buttons">
+            <button id="btn-prev" class="btn-nav" onclick="changePart(-1)" disabled>Previous Part</button>
+            <button id="btn-next" class="btn-nav" onclick="changePart(1)">Next Part</button>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Core Logic Engine -->
+    <script>
+        let currentPart = 1;
+        let totalTime = 60 * 60; 
+        let timerInterval;
+        
+        // Comprehensive Absolute Answer Key Map Definition
+        const answerKey = {
+            q1: "TRUE", q2: "FALSE", q3: "TRUE", q4: "FALSE", q5: "FALSE", q6: "FALSE", q7: "NOT GIVEN",
+            q8: "tentacles", q9: "nematocysts", q10: "mouth", q11: "gastrovascular", q12: "basal", q13: "exoskeleton",
+            q14: "ii", q15: "v", q16: "vi", q17: "vii", r18: "i", q18: "i", q19: "iii", q20: "iii",
+            q21: "B", q22: "A", q23: "B", q24: "A", q25: "B", q26: "B",
+            q27: "B", q28: "A", q29: "A", q30: "B", q31: "A", q32: "B",
+            q33: "NO", q34: "YES", q35: "NO", q36: "YES", q37: "NO", q38: "NOT GIVEN", q39: "NO", q40: "NO"
+        };
+
+        function startTest() {
+            const nameInput = document.getElementById('candidate-name').value.trim();
+            if(!nameInput) {
+                alert("Please enter your name to start the examination.");
+                return;
+            }
+            document.getElementById('display-name').innerText = nameInput;
+            document.getElementById('start-screen').style.display = 'none';
+            startTimer();
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                totalTime--;
+                let mins = Math.floor(totalTime / 60);
+                let secs = totalTime % 60;
+                document.getElementById('timer').innerText = 
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                if(totalTime <= 300) { 
+                    document.getElementById('timer').style.color = '#fff';
+                    document.getElementById('timer').style.backgroundColor = '#d9534f';
+                }
+
+                if (totalTime <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Time is up! Your answers will be submitted automatically.");
+                    submitTest(true);
+                }
+            }, 1000);
+        }
+
+        function changePart(direction) {
+            document.getElementById(`part${currentPart}`).classList.remove('active');
+            currentPart += direction;
+            document.getElementById(`part${currentPart}`).classList.add('active');
+
+            document.getElementById('btn-prev').disabled = (currentPart === 1);
+            document.getElementById('btn-next').disabled = (currentPart === 3);
+            
+            if(currentPart === 3) {
+                document.getElementById('btn-next').innerText = "Finish";
+                document.getElementById('btn-next').onclick = () => submitTest(false);
+            } else {
+                document.getElementById('btn-next').innerText = "Next Part";
+                document.getElementById('btn-next').onclick = () => changePart(1);
+            }
+        }
+
+        function submitTest(isAuto = false) {
+            if(!isAuto) {
+                let confirmSubmit = confirm("Are you sure you want to finish and submit your exam results?");
+                if(!confirmSubmit) return;
+            }
+            
+            clearInterval(timerInterval);
+            document.body.classList.add('review-mode');
+            let score = 0;
+
+            // Sync structural inputs into DOM targets attributes for offline recovery features
+            for (let i = 1; i <= 40; i++) {
+                let inputElement = document.getElementById(`q${i}`);
+                if (inputElement) {
+                    if (inputElement.tagName === "INPUT") {
+                        inputElement.setAttribute('value', inputElement.value);
+                    } else if (inputElement.tagName === "SELECT") {
+                        for (let opt of inputElement.options) {
+                            if (opt.value === inputElement.value) opt.setAttribute('selected', 'selected');
+                            else opt.removeAttribute('selected');
+                        }
+                    }
+                } else {
+                    let radios = document.getElementsByName(`q${i}`);
+                    for (let r of radios) {
+                        if (r.checked) r.setAttribute('checked', 'checked');
+                        else r.removeAttribute('checked');
+                    }
+                }
+            }
+
+            // Evaluation Auditing Loop
+            for (let i = 1; i <= 40; i++) {
+                let userAns = "";
+                let inputElement = document.getElementById(`q${i}`);
+                
+                if(inputElement) {
+                    userAns = inputElement.value.trim().toLowerCase();
+                } else {
+                    let radios = document.getElementsByName(`q${i}`);
+                    for(let r of radios) {
+                        if(r.checked) userAns = r.value.toLowerCase();
+                        r.disabled = true;
+                    }
+                }
+
+                let targetKey = (answerKey[`q${i}`] || "").toLowerCase();
+                let targetRow = document.getElementById(`block-q${i}`) || document.getElementById(`q${i}`)?.parentElement || document.getElementsByName(`q${i}`)[0]?.parentElement?.parentElement;
+                
+                if (userAns === targetKey) {
+                    score++;
+                    if(targetRow) {
+                        let span = document.createElement('span');
+                        span.className = "correct-ans";
+                        span.innerText = ` ✓ Correct (${answerKey['q'+i]})`;
+                        targetRow.querySelector('.q-main-content')?.appendChild(span) || targetRow.appendChild(span);
+                    }
+                } else {
+                    if(targetRow) {
+                        let span = document.createElement('span');
+                        span.className = "correct-ans";
+                        span.style.color = "red";
+                        span.innerText = ` ✗ Incorrect (Correct: ${answerKey['q'+i]})`;
+                        targetRow.querySelector('.q-main-content')?.appendChild(span) || targetRow.appendChild(span);
+                    }
+                }
+            }
+
+            // Render Result Metrics into Reporting Dashboard
+            document.getElementById('score-candidate-name').innerText = document.getElementById('display-name').innerText;
+            document.getElementById('score-raw-out').innerText = `Result: ${score} / 40 Questions`;
+            document.getElementById('score-band-out').innerText = calculateIELTSBand(score);
+            
+            // Pop reporting window overlay block layout open
+            document.getElementById('score-screen').style.display = 'flex';
+
+            // Swap out navigation tools
+            document.getElementById('btn-submit').style.display = 'none';
+            document.getElementById('btn-download').style.display = 'block';
+        }
+
+        function closeScoreScreen() {
+            document.getElementById('score-screen').style.display = 'none';
+            currentPart = 1;
+            changePart(0);
+            document.getElementById('btn-prev').disabled = false;
+            document.getElementById('btn-next').disabled = false;
+            document.getElementById('btn-next').innerText = "Next Part";
+            document.getElementById('btn-next').onclick = () => changePart(1);
+        }
+
+        function calculateIELTSBand(score) {
+            if(score >= 39) return "9.0";
+            if(score >= 37) return "8.5";
+            if(score >= 35) return "8.0";
+            if(score >= 32) return "7.5";
+            if(score >= 30) return "7.0";
+            if(score >= 27) return "6.5";
+            if(score >= 23) return "6.0";
+            if(score >= 19) return "5.5";
+            if(score >= 15) return "5.0";
+            return "Below 5.0";
+        }
+
+        function downloadHTML() {
+            let startScreen = document.getElementById('start-screen');
+            if(startScreen) startScreen.remove();
+            let scoreScreen = document.getElementById('score-screen');
+            if(scoreScreen) scoreScreen.remove();
+
+            let htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            let blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+            let link = document.createElement("a");
+            let name = document.getElementById('display-name').innerText.replace(/\s+/g, '_');
+            
+            link.href = URL.createObjectURL(blob);
+            link.download = `IELTS_Reading_Mastery_${name}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
