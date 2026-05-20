@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IELTS Academic Reading Master Practice Engine - Highlight Enabled</title>
+    <style>
+        :root {
+            --primary-color: #0d5c75;
+            --secondary-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --highlight-color: #fef08a; /* Màu vàng bôi sáng chuẩn thi máy */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            color: var(--text-color);
+            background-color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Overlays Layout */
+        .overlay-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            border-top: 8px solid var(--primary-color);
+        }
+
+        .modal-box h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .modal-box p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .modal-box ul {
+            text-align: left;
+            margin: 20px 0;
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .modal-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .btn-action {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #094356;
+        }
+
+        #score-screen {
+            display: none;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        #score-screen .modal-box {
+            border-top: 8px solid var(--success-color);
+        }
+
+        .score-highlight {
+            font-size: 28px !important;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 15px 0 !important;
+        }
+
+        /* Header Components */
+        header {
+            background: var(--secondary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+        }
+
+        .test-title {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-submit {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-download {
+            display: none;
+            background: var(--success-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Main Workspace Split Screen */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .part-container {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .part-container.active {
+            display: flex;
+        }
+
+        .passage-side {
+            width: 50%;
+            padding: 25px;
+            overflow-y: auto;
+            border-right: 2px solid var(--border-color);
+            line-height: 1.7;
+            background: #fff;
+            position: relative;
+        }
+
+        .passage-side h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .passage-side p {
+            margin-bottom: 18px;
+            text-align: justify;
+        }
+
+        .question-side {
+            width: 50%;
+            padding: 25px;
+            overflow-y: auto;
+            background: #f8fafc;
+            padding-bottom: 80px;
+        }
+
+        /* Highlight Style classes */
+        .ielts-highlight {
+            background-color: var(--highlight-color);
+            cursor: pointer;
+        }
+
+        #highlight-menu {
+            position: fixed;
+            display: none;
+            background: #1e293b;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        #highlight-menu:hover {
+            background: #0f172a;
+        }
+
+        /* Question Formats */
+        .question-block {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .question-group-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #334155;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+            font-size: 16px;
+        }
+
+        .q-row {
+            margin-bottom: 18px;
+        }
+
+        .q-main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .q-text-inline {
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .q-num {
+            font-weight: bold;
+            min-width: 30px;
+            margin-top: 2px;
+        }
+
+        .q-input-text {
+            width: 160px;
+            padding: 6px;
+            border: 1px solid #cbd5e1;
+            border-radius: 3px;
+            margin: 0 5px;
+            font-size: 14px;
+        }
+
+        .options-list {
+            margin-left: 30px;
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        .option-item {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Diagram Component Graphic Styling */
+        .diagram-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            margin: 20px auto;
+            background: #fff;
+            border: 1px dashed #94a3b8;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .diagram-input-container {
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .diagram-input-row {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Explanation Component Layout UI */
+        .explanation-box {
+            display: none;
+            background-color: #f1f5f9;
+            border-left: 4px solid #64748b;
+            padding: 12px;
+            margin-top: 10px;
+            margin-left: 30px;
+            border-radius: 4px;
+            font-size: 13.5px;
+            line-height: 1.5;
+            color: #334155;
+            width: calc(100% - 30px);
+        }
+
+        .explanation-box strong {
+            color: var(--primary-color);
+        }
+
+        /* Bottom Fixed Footer Component Control */
+        footer {
+            background: var(--secondary-color);
+            border-top: 1px solid var(--border-color);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 50px;
+            position: relative;
+            z-index: 100;
+        }
+
+        #timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--danger-color);
+            background: #fff;
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-nav {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-nav:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        /* Review Audit Configurations Styles Override */
+        .review-mode input, .review-mode select {
+            pointer-events: none;
+            background-color: #f1f5f9 !important;
+        }
+        .review-mode .explanation-box {
+            display: block;
+        }
+        .correct-ans {
+            color: var(--success-color);
+            font-weight: bold;
+            margin-top: 5px;
+            font-size: 14px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="highlight-menu">Highlight</div>
+
+    <div id="start-screen" class="overlay-screen">
+        <div class="modal-box">
+            <h1>IELTS Academic Reading Examination</h1>
+            <p><strong>Duration:</strong> 60 minutes | <strong>Format:</strong> 3 Extended Passages</p>
+            <ul>
+                <li>Read the passages and answer all 40 questions carefully.</li>
+                <li><strong>Highlighter:</strong> Select text in passages to highlight. Click highlighted text to clear it.</li>
+                <li>The countdown timer starts immediately after clicking the button below.</li>
+            </ul>
+            <input type="text" id="candidate-name" placeholder="Enter your full name here..." required>
+            <button class="btn-action" onclick="startTest()">Start Test</button>
+        </div>
+    </div>
+
+    <div id="score-screen" class="overlay-screen">
+        <div class="modal-box">
+            <h1>Examination Performance Report</h1>
+            <p>Candidate: <strong id="score-candidate-name">Candidate Name</strong></p>
+            <p class="score-highlight" id="score-raw-out">Result: 0 / 40</p>
+            <p style="font-size: 20px; margin-bottom: 25px;">Estimated IELTS Band Score: <strong id="score-band-out" style="color: #16a34a;">0.0</strong></p>
+            <button class="btn-action" style="background: #16a34a;" onclick="closeScoreScreen()">Review Test & Explanations</button>
+        </div>
+    </div>
+
+    <header>
+        <div class="test-title">IELTS Reading Practice Component (<span id="display-name">Guest</span>)</div>
+        <div class="header-controls">
+            <button id="btn-download" class="btn-download" onclick="downloadHTML()">Download Results</button>
+            <button id="btn-submit" class="btn-submit" onclick="submitTest(false)">Submit Test</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+
+        <div id="part1" class="part-container active">
+            <div class="passage-side">
+                <h2>READING PASSAGE 1: The Deep Ocean Conveyor Belt</h2>
+                <p><strong>A.</strong> The global ocean conveyor belt, scientifically documented as thermohaline circulation, represents one of the most fundamental thermal distribution networks operating on planet Earth. This deep-water circulatory dynamic drives a continuous current of immense volume through the world's oceanic basins, acting as an essential stabilizing buffer for the global climate matrix. Although surface winds guide immediate coastal currents, it is the invisible subterranean variations in seawater density—specifically dictated by temperature and salinity—that fuel this global deep-sea cycle.</p>
+                <p><strong>B.</strong> The mechanism initiates its trajectory in the sub-polar zones of the North Atlantic. Here, the low atmospheric temperatures severely cool surface waters, causing a massive shift in molecular compaction. Simultaneously, as sea ice freezes, it expels dissolved minerals back into the fluid surroundings, dramatically escalating the local salinity levels. This chemical configuration yields water that is incredibly cold, dense, and heavy. Consequently, this mass plunges down to the sea floor, creating a deep-sea downward flow called the North Atlantic Deep Water.</p>
+                <p><strong>C.</strong> Most ecological theorists emphasize that this system forms a vital loop that carries nutrients across geographic boundaries. As this heavy undercurrent journeys southward toward Antarctica, it gathers deep benthic sediments packed with decayed organic matters. Upon merging with the powerful Antarctic Circumpolar Current, the conveyor splits into two major northbound branches that enter the Indian and Pacific Oceans. Here, deep water slowly warms and rises through a biological upward cycle called upwelling, bringing nutrients back to sunlit surface zones.</p>
+                <p><strong>D.</strong> The mechanical architecture of this deep circulation loop can be segmented into distinct operational zones. The northernmost cooling point acts as the structural pump. The mid-ocean channels function as transition paths where deep masses retain their cold properties over centuries. At the endpoint of the cycle, the equatorial upwelling zones serve as the discharge valve where oxygen-poor, nutrient-dense deep water returns to the atmosphere's surface interfaces, sustaining the foundation of marine food webs.</p>
+                <p><strong>E.</strong> Beneath the surface layers where wind-driven currents like the Gulf Stream flow, the cold undercurrent behaves like a giant aquatic train. This massive transport system takes approximately 1,000 years to complete one single full circuit from its sub-polar origins back to its source. This slow movement ensures that heat trapped in tropical zones is gradually redistributed toward northern Europe, preventing catastrophic regional ice growth.</p>
+                <p><strong>F.</strong> Anthropogenic environmental changes pose an immediate hazard to this deep-sea circulatory dynamic. If the Arctic ice caps melt rapidly due to global warming, an enormous volume of fresh water is introduced into the sub-polar North Atlantic. This dilution drastically reduces the salinity levels of the surface water. Because fresh water does not possess the density of highly saline ocean water, the sub-polar surface water stops sinking, bringing the mechanical pump to an abrupt halt. This event is known as a circulation shutdown.</p>
+                <p><strong>G.</strong> Beyond thermal disruptions, a complete shutdown of the conveyor belt would cause massive oceanic stagnation. Marine scientists emphasize that tracking these salinity parameters through deep-sea sensory buoys is essential for designing global climate mitigation strategies, which aim to shield human coastal populations from severe weather alterations caused by unexpected current collapses.</p>
+            </div>
+            <div class="question-side">
+                <div class="question-block">
+                    <div class="question-group-title">Questions 1-7: True, False, Not Given</div>
+                    
+                    <div class="q-row" id="block-q1">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">1</span><div><span>Surface winds are the primary driving force behind the deep ocean conveyor belt system.</span><br><select id="q1" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn A chỉ rõ gió bề mặt chỉ điều khiển các dòng chảy ven biển, còn hệ thống băng chuyền sâu là do chênh lệch mật độ (nhiệt độ và độ mặn) thúc đẩy. Do đó chọn FALSE.</div>
+                    </div>
+                    
+                    <div class="q-row" id="block-q2">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">2</span><div><span>The formation of sea ice increases the salinity of the surrounding un-frozen water.</span><br><select id="q2" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn B nêu rõ khi băng biển đóng băng, nó đẩy khoáng chất hòa tan trở lại nước xung quanh làm tăng độ mặn. Do đó chọn TRUE.</div>
+                    </div>
+                    
+                    <div class="q-row" id="block-q3">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">3</span><div><span>Upwelling is a process that pushes nutrient-poor water down into the benthic zone.</span><br><select id="q3" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn C giải thích upwelling đưa nước giàu dinh dưỡng lên bề mặt sunlit zones chứ không phải đẩy nước xuống. Do đó chọn FALSE.</div>
+                    </div>
+                    
+                    <div class="q-row" id="block-q4">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">4</span><div><span>The equatorial upwelling zones act as the transition paths where water cools down further.</span><br><select id="q4" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn D chỉ rõ vùng upwelling ở xích đạo hoạt động như một van xả (discharge valve) đưa nước trở lại tầng khí quyển chứ không phải khu vực làm lạnh. Do đó chọn FALSE.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q5">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">5</span><div><span>An ocean water mass requires approximately ten centuries to finish a full conveyor circuit.</span><br><select id="q5" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn E khẳng định chu kỳ mất khoảng 1,000 năm (tương đương với 10 thế kỷ). Do đó chọn TRUE.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q6">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">6</span><div><span>Fresh water from melting glaciers slows down the pump because it contains highly toxic chemical compounds.</span><br><select id="q6" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn F giải thích nước ngọt từ băng tan làm chậm bơm vì làm loãng độ mặn, giảm mật độ khối lượng khiến nước bề mặt dừng chìm xuống, không phải do độc tố. Do đó chọn FALSE.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q7">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">7</span><div><span>Sensory buoys have successfully prevented several deep-sea current collapses in the Atlantic.</span><br><select id="q7" class="user-ans"><option value="">---</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn G chỉ nói theo dõi qua phao cảm biến là thiết yếu để thiết kế chiến lược giảm thiểu tương lai, không có dữ liệu chứng minh nó từng ngăn chặn thành công vụ sụp đổ nào. Do đó chọn NOT GIVEN.</div>
+                    </div>
+                </div>
+
+                <div class="question-block">
+                    <div class="question-group-title">Questions 8-13: Label the Diagram Below</div>
+                    <p style="margin-bottom: 10px; font-style: italic;">Choose ONE WORD ONLY from the passage for each answer.</p>
+                    
+                    <div class="diagram-wrapper">
+                        <svg viewBox="0 0 400 280" width="100%" height="100%">
+                            <path d="M 50 80 Q 200 40 350 80 L 330 220 Q 200 260 70 220 Z" fill="none" stroke="#334155" stroke-width="2"/>
+                            <path d="M 50 80 L 70 220" fill="none" stroke="blue" stroke-width="3" stroke-dasharray="4"/>
+                            <path d="M 350 80 L 330 220" fill="none" stroke="red" stroke-width="3"/>
+                            
+                            <path d="M 40 50 L 50 75" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="25" y="45" fill="red" font-weight="bold">8</text>
+                            
+                            <path d="M 90 140 L 65 140" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="100" y="145" fill="red" font-weight="bold">9</text>
+
+                            <path d="M 280 140 L 335 140" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="260" y="145" fill="red" font-weight="bold">10</text>
+                            
+                            <path d="M 200 270 L 200 245" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="195" y="280" fill="red" font-weight="bold">11</text>
+                            
+                            <path d="M 380 50 L 355 75" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="385" y="45" fill="red" font-weight="bold">12</text>
+
+                            <path d="M 200 15 L 200 45" fill="none" stroke="red" stroke-width="1" marker-end="url(#arrow)"/>
+                            <text x="195" y="12" fill="red" font-weight="bold">13</text>
+
+                            <defs>
+                                <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 2 L 10 5 L 0 8 z" fill="red"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                    </div>
+
+                    <div class="diagram-input-container">
+                        <div class="q-row" id="block-q8"><div class="q-main-content"><div class="diagram-input-row"><strong>[8] Main Origin Zone:</strong> <input type="text" id="q8" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn B chỉ ra nơi khởi nguồn trajectory là khu vực cận cực: <i>"The mechanism initiates its trajectory in the <b>sub-polar</b> zones..."</i></div></div>
+                        <div class="q-row" id="block-q9"><div class="q-main-content"><div class="diagram-input-row"><strong>[9] Downward Cold Deep Mass:</strong> <input type="text" id="q9" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn B chỉ ra dòng nước sâu chìm xuống: <i>"...creating a deep-sea downward flow called the North Atlantic <b>Deep</b> Water."</i></div></div>
+                        <div class="q-row" id="block-q10"><div class="q-main-content"><div class="diagram-input-row"><strong>[10] Upward Nutrient Cycle Process:</strong> <input type="text" id="q10" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn C xác định chu kỳ trồi nước ấm mang dinh dưỡng: <i>"...deep water slowly warms and rises through a biological upward cycle called <b>upwelling</b>..."</i></div></div>
+                        <div class="q-row" id="block-q11"><div class="q-main-content"><div class="diagram-input-row"><strong>[11] Bottom Sediment Layer Zone:</strong> <input type="text" id="q11" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn C nói về việc thu thập lớp trầm tích hữu cơ đáy biển: <i>"...it gathers deep <b>benthic</b> sediments..."</i></div></div>
+                        <div class="q-row" id="block-q12"><div class="q-main-content"><div class="diagram-input-row"><strong>[12] Surface Thermal Wind-Driven Current:</strong> <input type="text" id="q12" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn E nhắc đến dòng hải lưu bề mặt: <i>"Beneath the surface layers where wind-driven currents like the <b>Gulf</b> Stream flow..."</i></div></div>
+                        <div class="q-row" id="block-q13"><div class="q-main-content"><div class="diagram-input-row"><strong>[13] Primary Indicated Scientific Term:</strong> <input type="text" id="q13" class="q-input-text user-ans"></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn A ghi nhận tên khoa học toàn bộ chu kỳ: <i>"The global ocean conveyor belt, scientifically documented as <b>thermohaline</b> circulation..."</i></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="part2" class="part-container">
+            <div class="passage-side">
+                <h2>READING PASSAGE 2: The Chronology of Written Script</h2>
+                <p><strong>Paragraph A:</strong> The human drive to preserve acoustic speech via permanent graphic notation systems marked the true dawn of recorded history. Long before formalized characters were developed, prehistoric communities utilized primitive petroglyphs and geometric notches carved into ivory bones to track seasonal migrations or lunar intervals. These early markings functioned as proto-writing, lacking structural syntax but providing essential memory triggers for the community's survival rituals.</p>
+                <p><strong>Paragraph B:</strong> The profound transition into fully standardized script materialized in Mesopotamia around 3200 BCE. The early Sumerian administrators faced immense challenges managing the logistical distribution of grain supplies and livestock trades within rapid municipal expansions. To resolve this bookkeeping crisis, accountants utilized sharp reeds to press wedge-shaped icons into soft clay tablets, initiating the writing system globally classified as cuneiform. This mechanical advancement transformed writing from abstract art into a tool for systemic administrative oversight.</p>
+                <p><strong>Paragraph C:</strong> Independent of Middle Eastern advancements, ancient Mesoamerican civilizations engineered their own distinct linguistic notation frameworks. The Maya civilization created an incredibly complex hieroglyphic matrix composed of hundreds of individual glyphs representing complete syllables or absolute logograms. This script was reserved primarily for dynastic records, tracking the exact lineages of divine monarchs and calculating cosmic timelines across millions of years, reflecting a highly ritualistic function.</p>
+                <p><strong>Paragraph D:</strong> This early scribal era was tightly monitored by exclusive academic elites. Because memorizing thousands of distinctive character variants required lifelong vocational training, scribes functioned as powerful political figures within imperial courts. Government agencies across Egypt and early China restricted the access to textual knowledge, ensuring that the general public remained illiterate, which naturally safeguarded the bureaucratic hierarchy from popular uprisings.</p>
+                <p><strong>Paragraph E:</strong> By the second millennium BCE, the fundamental constraints of logographic scripts—where every single unique object required its own distinct symbol—precipitated a collapse in administrative efficiency. The maritime traders of Phoenicia, needing a fast, flexible framework to log seafaring commerce across the Mediterranean, abandoned complex images entirely. They developed a streamlined system consisting of just 22 abstract letters representing phonetic consonants, creating the world's first true linear alphabet.</p>
+                <p><strong>Paragraph F:</strong> Technical infrastructural adjustments soon accelerated this linguistic democratization. In the second century CE, Chinese imperial court officials under Cai Lun pioneered the formulation of modern paper manufacturing using macerated mulberry bark and hemp fibers. This replacement of heavy bamboo strips or expensive silk sheets allowed textual materials to be produced cheaply and distributed extensively across vast geographical regions for the first time.</p>
+                <p><strong>Paragraph G:</strong> The global consolidation of written literacy reached its climax in 15th-century Europe. Johannes Gutenberg's integration of movable metal type into a mechanical printing press initiated an unprecedented media revolution. Public interest in literary texts spiked dramatically, and traditional clerical hand-copying scripts were quickly obsolete. This industrialization shattered the monastic monopoly over knowledge production and paved the dynamic path for the European Renaissance.</p>
+                <p><strong>Paragraph H:</strong> The evolution of writing demonstrates that script is not a fixed aesthetic ornament; rather, it adapts dynamically to the processing capacities of contemporary technical substrates, shifting from heavy stone tablets to digital pixels in an ongoing cycle of structural optimization.</p>
+            </div>
+            <div class="question-side">
+                <div class="question-block">
+                    <div class="question-group-title">Questions 14-20: Paragraph Heading Matching</div>
+                    <div style="background: #e2e8f0; padding: 12px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; line-height: 1.6;">
+                        i. The structural limits of early logographic symbols<br>
+                        ii. Prehistoric markings and proto-writing roots<br>
+                        iii. An industrial revolution in mechanical text duplication<br>
+                        iv. The introduction of organic fibers for cheap paper distribution<br>
+                        v. Elite monopoly over scribal literacy and bureaucratic power<br>
+                        vi. Logistical bookkeeping triggers the birth of cuneiform<br>
+                        vii. Complex hieroglyphs reserved for dynastic and cosmic timelines
+                    </div>
+                    
+                    <div class="q-row" id="block-q14"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph A</span><select id="q14" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn A mô tả các kí hiệu tiền sử và nguồn gốc thô sơ: <i>"prehistoric communities utilized primitive petroglyphs... proto-writing..."</i> Chọn tiêu đề **ii**.</div></div>
+                    <div class="q-row" id="block-q15"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph B</span><select id="q15" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn B mô tả nhu cầu quản lý sổ sách kế toán dẫn đến sự ra đời chữ cuneiform: <i>"To resolve this bookkeeping crisis... cuneiform."</i> Chọn tiêu đề **vi**.</div></div>
+                    <div class="q-row" id="block-q16"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph C</span><select id="q16" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn C nói về chữ tượng hình Maya dành riêng cho biên niên sử vương triều và vũ trụ: <i>"This script was reserved primarily for dynastic records... cosmic timelines..."</i> Chọn tiêu đề **vii**.</div></div>
+                    <div class="q-row" id="block-q17"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph D</span><select id="q17" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn D nói về việc độc quyền biết chữ của giới học thuật tinh hoa để duy trì quyền lực: <i>"This early scribal era was tightly monitored by exclusive academic elites... safeguarded the bureaucratic hierarchy..."</i> Chọn tiêu đề **v**.</div></div>
+                    <div class="q-row" id="block-q18"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph E</span><select id="q18" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn E phân tích giới hạn của hệ chữ biểu nghĩa dẫn tới sự sụt giảm hiệu suất hành chính: <i>"the fundamental constraints of logographic scripts... collapse in administrative efficiency."</i> Chọn tiêu đề **i**.</div></div>
+                    <div class="q-row" id="block-q19"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph F</span><select id="q19" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn F mô tả kỹ thuật làm giấy giá rẻ từ vỏ cây dâu và sợi gai dầu: <i>"pioneered the formulation of modern paper manufacturing using macerated mulberry bark..."</i> Chọn tiêu đề **iv**.</div></div>
+                    <div class="q-row" id="block-q20"><div class="q-main-content"><div class="q-text-inline"><span>Paragraph G</span><select id="q20" class="user-ans" style="margin-left:20px;"><option value="">---</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option></select></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn G nói về hệ thống in ấn cơ khí của Gutenberg làm thay đổi bộ mặt sao chép văn bản: <i>"Gutenberg's integration of movable metal type into a mechanical printing press..."</i> Chọn tiêu đề **iii**.</div></div>
+                </div>
+
+                <div class="question-block">
+                    <div class="question-group-title">Questions 21-26: Multiple Choice Questions</div>
+                    
+                    <div class="q-row" id="block-q21"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">21</span><div><span>Sumerian accountants pressed what instrument into soft clay tablets to initiate cuneiform?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q21" value="A"> A. Movable metal plates</div>
+                            <div class="option-item"><input type="radio" name="q21" value="B"> B. Sharp botanical reeds</div>
+                            <div class="option-item"><input type="radio" name="q21" value="C"> C. Carved ivory bones</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn B ghi rõ: <i>"...accountants utilized sharp reeds to press wedge-shaped icons into soft clay tablets..."</i> Đáp án: B.</div></div>
+                    
+                    <div class="q-row" id="block-q22"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">22</span><div><span>What did ancient Mesoamerican Mayan glyphs primarily track within their civilization?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q22" value="A"> A. Dynastic lineages and cosmic timelines</div>
+                            <div class="option-item"><input type="radio" name="q22" value="B"> B. Maritime seafaring commerce logistics</div>
+                            <div class="option-item"><input type="radio" name="q22" value="C"> C. General public literacy data</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn C khẳng định: <i>"This script was reserved primarily for dynastic records, tracking the exact lineages of divine monarchs and calculating cosmic timelines..."</i> Đáp án: A.</div></div>
+
+                    <div class="q-row" id="block-q23"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">23</span><div><span>Why did Egypt and early China systematically restrict public access to script comprehension?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q23" value="A"> A. To accelerate the rapid deployment of alphabetical scripts</div>
+                            <div class="option-item"><input type="radio" name="q23" value="B"> B. To insulate the existing bureaucratic hierarchy from civil unrest</div>
+                            <div class="option-item"><input type="radio" name="q23" value="C"> C. Because organic mulberry bark materials were scarce</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn D chỉ rõ việc hạn chế đại chúng biết chữ giúp bảo vệ hệ thống phân cấp cai trị: <i>"...ensuring that the general public remained illiterate, which naturally safeguarded the bureaucratic hierarchy from popular uprisings."</i> Đáp án: B.</div></div>
+
+                    <div class="q-row" id="block-q24"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">24</span><div><span>The Phoenicians engineered an alphabet containing 22 letters because logographic systems:</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q24" value="A"> A. Suffered a critical decline in processing efficiency for traders</div>
+                            <div class="option-item"><input type="radio" name="q24" value="B"> B. Were banned by clerical monastic authorities</div>
+                            <div class="option-item"><input type="radio" name="q24" value="C"> C. Could only be printed using expensive metal types</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn E giải thích: <i>"...the fundamental constraints of logographic scripts... precipitated a collapse in administrative efficiency. The maritime traders... abandoned complex images entirely."</i> Đáp án: A.</div></div>
+
+                    <div class="q-row" id="block-q25"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">25</span><div><span>Cai Lun's technical manufacturing breakthrough relied on which combination of ingredients?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q25" value="A"> A. Wedge-shaped clay and maritime reeds</div>
+                            <div class="option-item"><input type="radio" name="q25" value="B"> B. Macerated mulberry bark and hemp fibers</div>
+                            <div class="option-item"><input type="radio" name="q25" value="C"> C. Smudged digital pixels and soft silk sheets</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn F ghi rõ công thức: <i>"...pioneered the formulation of modern paper manufacturing using macerated mulberry bark and hemp fibers."</i> Đáp án: B.</div></div>
+
+                    <div class="q-row" id="block-q26"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">26</span><div><span>Johannes Gutenberg's industrialization of typography directly accelerated which historical era?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q26" value="A"> A. The Mesopotamian agricultural expansion</div>
+                            <div class="option-item"><input type="radio" name="q26" value="B"> B. The European Renaissance</div>
+                            <div class="option-item"><input type="radio" name="q26" value="C"> C. The early Mayan ritualistic golden age</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn G kết luận: <i>"This industrialization shattered the monastic monopoly over knowledge production and paved the dynamic path for the European Renaissance."</i> Đáp án: B.</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="part3" class="part-container">
+            <div class="passage-side">
+                <h2>READING PASSAGE 3: The Cognitive Mechanics of Working Memory</h2>
+                <p><strong>A.</strong> Human cognitive architecture possesses a specialized internal system responsible for the temporary retention and manipulation of fluid information, universally designated as working memory. Unlike passive long-term memory, which serves as a massive subterranean warehouse for lifetime experiences, working memory behaves as an active computational desktop. This temporary buffer enables the conscious mind to process complex syntax structures, resolve multi-stage arithmetic calculations, and navigate unknown spatial landscapes in real-time.</p>
+                <p><strong>B.</strong> Historically, the exact structural architecture of this cognitive desk has ignited intense debate across neuroscience fields. The dominant blueprint throughout the late twentieth century was the multi-component model, which conceptualized working memory not as a single uniform container, but as an integrated network of specialized sub-mechanisms overseen by a master controller known as the central executive.</p>
+                <p><strong>C.</strong> Under this framework, auditory verbal data is processed through an isolated sub-loop known as the phonological loop. This mechanism functions like a short-duration tape player, capturing acoustic signals and refreshing them continuously via silent vocal rehearsal inside the mind. If this internal echo is disrupted by competing background noise, the linguistic items deteriorate within seconds, causing immediate tracking failure.</p>
+                <p><strong>D.</strong> Simultaneously, visual and spatial inputs are managed by a separate mental sketchpad. This visual-spatial channel allows an individual to construct internal maps, track moving objects mentally, and visualize complex shapes without physical optical stimuli. Neuroimaging arrays reveal that while verbal tasks trigger left-hemisphere speech centers, spatial visualization illuminates localized neural circuits within the right hemisphere's parietal cortex.</p>
+                <p><strong>E.</strong> The fundamental limit of this operational workspace is its extremely restricted capacity. Early cognitive studies demonstrated that the adult working memory can hold only a limited quantity of information chunks—historically estimated at roughly seven items, though modern trials show the accurate limit is closer to four. To maximize this narrow space, the brain relies on a strategic process called chunking, which groups individual pieces of data into larger, organized clusters.</p>
+                <p><strong>F.</strong> In recent years, researchers discovered an additional component called the episodic buffer. This specialized chamber serves as an absolute integration space, linking information from the phonological loop and visual sketchpad with long-term memory data to create coherent, unified mental episodes. This architectural addition helps explain how humans can instantly recognize complex situational contexts.</p>
+                <p><strong>G.</strong> Despite these insights, the exact boundaries of working memory training remain heavily contested. While cognitive software companies promise that targeted mental games can expand this capacity permanently, modern neural audits indicate that while individuals improve at specific game tasks, the structural volume of the memory engine itself remains unchanged, meaning the benefits do not transfer into general intelligence enhancement.</p>
+            </div>
+            <div class="question-side">
+                <div class="question-block">
+                    <div class="question-group-title">Questions 27-32: Multiple Choice Selection</div>
+                    
+                    <div class="q-row" id="block-q27"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">27</span><div><span>What distinctive feature differentiates working memory from long-term storage mechanisms?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q27" value="A"> A. It serves as a permanent warehouse for historical records</div>
+                            <div class="option-item"><input type="radio" name="q27" value="B"> B. It operates as an active desktop for processing immediate data</div>
+                            <div class="option-item"><input type="radio" name="q27" value="C"> C. It operates entirely without right-hemisphere neural assistance</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn A chỉ ra đặc trưng: <i>"Unlike passive long-term memory... working memory behaves as an active computational desktop."</i> Đáp án: B.</div></div>
+                    
+                    <div class="q-row" id="block-q28"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">28</span><div><span>The multi-component model proposes that working memory is regulated by:</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q28" value="A"> A. A master controller termed the central executive</div>
+                            <div class="option-item"><input type="radio" name="q28" value="B"> B. A passive long-term auditory echo tape player</div>
+                            <div class="option-item"><input type="radio" name="q28" value="C"> C. Commercial cognitive training softwares</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn B chỉ rõ hệ thống được điều khiển bởi bộ điều hành trung tâm: <i>"...overseen by a master controller known as the central executive."</i> Đáp án: A.</div></div>
+
+                    <div class="q-row" id="block-q29"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">29</span><div><span>What event causes verbal items within the phonological loop to fade away rapidly?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q29" value="A"> A. Activation of right-hemisphere visual centers</div>
+                            <div class="option-item"><input type="radio" name="q29" value="B"> B. Interruption of the internal vocal rehearsal by competing noise</div>
+                            <div class="option-item"><input type="radio" name="q29" value="C"> C. Systematic expansion of the capacity limit from four to seven</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn C giải thích nếu việc lặp lại thông tin bị phá vỡ bởi tiếng ồn xung quanh thì dữ liệu sẽ biến mất: <i>"If this internal echo is disrupted by competing background noise, the linguistic items deteriorate within seconds..."</i> Đáp án: B.</div></div>
+
+                    <div class="q-row" id="block-q30"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">30</span><div><span>Neuroimaging proves that visual-spatial visualization tasks illuminate circuits in the:</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q30" value="A"> A. Left-hemisphere auditory loop centers</div>
+                            <div class="option-item"><input type="radio" name="q30" value="B"> B. Right hemisphere's parietal cortex</div>
+                            <div class="option-item"><input type="radio" name="q30" value="C"> C. Long-term memory storage warehouse</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn D chỉ ra vị trí: <i>"...spatial visualization illuminates localized neural circuits within the right hemisphere's parietal cortex."</i> Đáp án: B.</div></div>
+
+                    <div class="q-row" id="block-q31"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">31</span><div><span>According to modern trials, what is the precise limit of individual data chunks held?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q31" value="A"> A. Exactly four distinct items</div>
+                            <div class="option-item"><input type="radio" name="q31" value="B"> B. Roughly seven items without exception</div>
+                            <div class="option-item"><input type="radio" name="q31" value="C"> C. Millions of coherent multi-stage episodes</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn E khẳng định nghiên cứu mới chứng thực giới hạn thực tế là khoảng 4: <i>"...estimated at roughly seven items, though modern trials show the accurate limit is closer to four."</i> Đáp án: A.</div></div>
+
+                    <div class="q-row" id="block-q32"><div class="q-main-content"><div class="q-text-inline"><span class="q-num">32</span><div><span>What function does the episodic buffer execute within the memory architecture?</span>
+                        <div class="options-list">
+                            <div class="option-item"><input type="radio" name="q32" value="A"> A. It expands the structural volume of the memory engine permanently</div>
+                            <div class="option-item"><input type="radio" name="q32" value="B"> B. It integrates audio-visual tracks with long-term memory data</div>
+                            <div class="option-item"><input type="radio" name="q32" value="C"> C. It acts as an acoustic signal blocker to prevent decay</div>
+                        </div>
+                    </div></div></div><div class="explanation-box"><strong>Explanation:</strong> Đoạn F giải thích vai trò của episodic buffer: <i>"linking information from the phonological loop and visual sketchpad with long-term memory data..."</i> Đáp án: B.</div></div>
+                </div>
+
+                <div class="question-block">
+                    <div class="question-group-title">Questions 33-40: Yes, No, Not Given</div>
+                    
+                    <div class="q-row" id="block-q33">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">33</span><div><span>Working memory handles real-time tasks like processing complex language structures.</span><br><select id="q33" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn A xác nhận: <i>"This temporary buffer enables the conscious mind to process complex syntax structures..."</i> Do đó chọn YES.</div>
+                    </div>
+                    
+                    <div class="q-row" id="block-q34">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">34</span><div><span>The left hemisphere of the brain processes visual spatial visualization arrays.</span><br><select id="q34" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn D phản bác, não trái xử lý các tác vụ ngôn ngữ (verbal), còn trực quan hóa không gian nằm ở bán cầu não phải (right hemisphere). Do đó chọn NO.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q35">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">35</span><div><span>Chunking is a strategy that compresses data to bypass the workspace's narrow capacity.</span><br><select id="q35" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn E xác nhận chunking giúp tối đa hóa không gian giới hạn hẹp của bộ nhớ làm việc: <i>"To maximize this narrow space, the brain relies on a strategic process called chunking..."</i> Do đó chọn YES.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q36">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">36</span><div><span>The episodic buffer was the very first sub-mechanism identified in the 1950s.</span><br><select id="q36" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn F ghi nhận episodic buffer mới được tìm ra trong các nghiên cứu những năm gần đây (In recent years), không phải là cơ chế đầu tiên tìm ra từ thập niên 50. Chọn NO.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q37">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">37</span><div><span>Cognitive training games can successfully double the actual structural volume of working memory.</span><br><select id="q37" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn G khẳng định việc kiểm toán cấu trúc não bộ cho thấy dung tích cấu trúc của bộ nhớ làm việc không thay đổi khi chơi game phần mềm luyện não: <i>"...the structural volume of the memory engine itself remains unchanged..."</i> Do đó chọn NO.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q38">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">38</span><div><span>Working memory capacity values vary significantly between specific geographical populations.</span><br><select id="q38" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Trong bài viết không có bất kỳ thông tin nào so sánh dung lượng bộ nhớ giữa các quần thể địa lý khác nhau. Do đó chọn NOT GIVEN.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q39">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">39</span><div><span>Auditory signal items inside the phonological loop last indefinitely without any internal rehearsal.</span><br><select id="q39" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn C nêu rõ nếu thiếu việc lặp lại thầm lặng (silent rehearsal), thông tin sẽ biến mất trong vòng vài giây: <i>"refreshing them continuously via silent vocal rehearsal... If this internal echo is disrupted... items deteriorate within seconds..."</i> Do đó chọn NO.</div>
+                    </div>
+
+                    <div class="q-row" id="block-q40">
+                        <div class="q-main-content"><div class="q-text-inline"><span class="q-num">40</span><div><span>Neurologists and software creators have now reached a absolute agreement regarding memory transfer benefits.</span><br><select id="q40" class="user-ans"><option value="">---</option><option value="YES">YES</option><option value="NO">NO</option><option value="NOT GIVEN">NOT GIVEN</option></select></div></div></div>
+                        <div class="explanation-box"><strong>Explanation:</strong> Đoạn G khẳng định vấn đề này vẫn đang bị tranh luận dữ dội chứ chưa có sự đồng thuận tuyệt đối: <i>"Despite these insights, the exact boundaries of working memory training remain heavily contested."</i> Do đó chọn NO.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div id="timer">60:00</div>
+        <div class="nav-buttons">
+            <button id="btn-prev" class="btn-nav" onclick="changePart(-1)" disabled>Previous Part</button>
+            <button id="btn-next" class="btn-nav" onclick="changePart(1)">Next Part</button>
+        </div>
+    </footer>
+
+    <script>
+        let currentPart = 1;
+        let totalTime = 60 * 60; 
+        let timerInterval;
+        
+        const answerKey = {
+            q1: "FALSE", q2: "TRUE", q3: "FALSE", q4: "FALSE", q5: "TRUE", q6: "FALSE", q7: "NOT GIVEN",
+            q8: "sub-polar", q9: "deep", q10: "upwelling", q11: "benthic", q12: "gulf", q13: "thermohaline",
+            q14: "ii", q15: "vi", q16: "vii", q17: "v", q18: "i", q19: "iv", q20: "iii",
+            q21: "B", q22: "A", q23: "B", q24: "A", q25: "B", q26: "B",
+            q27: "B", q28: "A", q29: "B", q30: "B", q31: "A", q32: "B",
+            q33: "YES", q34: "NO", q35: "YES", q36: "NO", q37: "NO", q38: "NOT GIVEN", q39: "NO", q40: "NO"
+        };
+
+        function startTest() {
+            const nameInput = document.getElementById('candidate-name').value.trim();
+            if(!nameInput) {
+                alert("Please enter your name to start the examination.");
+                return;
+            }
+            document.getElementById('display-name').innerText = nameInput;
+            document.getElementById('start-screen').style.display = 'none';
+            startTimer();
+            initHighlighter();
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                totalTime--;
+                let mins = Math.floor(totalTime / 60);
+                let secs = totalTime % 60;
+                
+                document.getElementById('timer').innerText = 
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                if(totalTime <= 300) { 
+                    document.getElementById('timer').style.color = '#fff';
+                    document.getElementById('timer').style.backgroundColor = '#dc2626';
+                }
+
+                if (totalTime <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Time is up! Your answers will be submitted automatically.");
+                    submitTest(true);
+                }
+            }, 1000);
+        }
+
+        /* ================================================================
+           ADVANCED HIGH LIGHTER CORE REWRITTEN SYSTEM (OPTIMIZED)
+           ================================================================
+        */
+        let currentSavedRange = null;
+
+        function initHighlighter() {
+            const highlightMenu = document.getElementById('highlight-menu');
+
+            // Lắng nghe sự kiện bôi đen chuột trong toàn hệ thống
+            document.addEventListener('mouseup', (e) => {
+                const selection = window.getSelection();
+                const selectedText = selection.toString().trim();
+
+                // Nếu click vào vùng đã bôi vàng -> Hiện menu xóa bôi
+                if (e.target.classList.contains('ielts-highlight')) {
+                    currentSavedRange = e.target;
+                    highlightMenu.innerText = "Clear Highlight";
+                    highlightMenu.style.left = `${e.clientX}px`;
+                    highlightMenu.style.top = `${e.clientY - 35}px`;
+                    highlightMenu.style.display = 'block';
+                    return;
+                }
+
+                // Nếu chọn đoạn text mới hợp lệ bên vùng đọc bài (passage-side)
+                if (selectedText !== '' && isInsidePassage(selection.anchorNode)) {
+                    currentSavedRange = selection.getRangeAt(0).cloneRange();
+                    highlightMenu.innerText = "Highlight";
+                    highlightMenu.style.left = `${e.clientX}px`;
+                    highlightMenu.style.top = `${e.clientY - 35}px`;
+                    highlightMenu.style.display = 'block';
+                } else {
+                    highlightMenu.style.display = 'none';
+                }
+            });
+
+            // Khi click chuột xuống ở bất kì đâu, ẩn menu bôi nếu không click trúng nút menu
+            document.addEventListener('mousedown', (e) => {
+                if (e.target !== highlightMenu) {
+                    setTimeout(() => highlightMenu.style.display = 'none', 150);
+                }
+            });
+
+            // Xử lý sự kiện click nút bôi vàng / xóa bôi vàng
+            highlightMenu.addEventListener('click', () => {
+                if (highlightMenu.innerText === "Highlight" && currentSavedRange) {
+                    const span = document.createElement('span');
+                    span.className = 'ielts-highlight';
+                    try {
+                        currentSavedRange.surroundContents(span);
+                    } catch (err) {
+                        // Fix lỗi nếu bôi lan sang các thẻ HTML lân cận
+                        alert("Please select text strictly within a single paragraph element.");
+                    }
+                    window.getSelection().removeAllRanges();
+                } 
+                else if (highlightMenu.innerText === "Clear Highlight" && currentSavedRange) {
+                    const parent = currentSavedRange.parentNode;
+                    while (currentSavedRange.firstChild) {
+                        parent.insertBefore(currentSavedRange.firstChild, currentSavedRange);
+                    }
+                    parent.removeChild(currentSavedRange);
+                }
+                highlightMenu.style.display = 'none';
+            });
+        }
+
+        function isInsidePassage(node) {
+            while (node) {
+                if (node.classList && node.classList.contains('passage-side')) return true;
+                node = node.parentNode;
+            }
+            return false;
+        }
+
+        /* End of Highlighter Engine Component Logic */
+
+        function changePart(direction) {
+            document.getElementById(`part${currentPart}`).classList.remove('active');
+            currentPart += direction;
+            document.getElementById(`part${currentPart}`).classList.add('active');
+
+            document.getElementById('btn-prev').disabled = (currentPart === 1);
+            document.getElementById('btn-next').disabled = (currentPart === 3);
+            if(currentPart === 3) {
+                document.getElementById('btn-next').innerText = "Finish";
+                document.getElementById('btn-next').onclick = () => submitTest(false);
+            } else {
+                document.getElementById('btn-next').innerText = "Next Part";
+                document.getElementById('btn-next').onclick = () => changePart(1);
+            }
+        }
+
+        function submitTest(isAuto = false) {
+            if(!isAuto) {
+                let confirmSubmit = confirm("Are you sure you want to finish and submit your exam results?");
+                if(!confirmSubmit) return;
+            }
+            
+            clearInterval(timerInterval);
+            document.body.classList.add('review-mode');
+            let score = 0;
+
+            for (let i = 1; i <= 40; i++) {
+                let inputElement = document.getElementById(`q${i}`);
+                if (inputElement) {
+                    if (inputElement.tagName === "INPUT") {
+                        inputElement.setAttribute('value', inputElement.value);
+                    } else if (inputElement.tagName === "SELECT") {
+                        for (let opt of inputElement.options) {
+                            if (opt.value === inputElement.value) opt.setAttribute('selected', 'selected');
+                            else opt.removeAttribute('selected');
+                        }
+                    }
+                } else {
+                    let radios = document.getElementsByName(`q${i}`);
+                    for (let r of radios) {
+                        if (r.checked) r.setAttribute('checked', 'checked');
+                        else r.removeAttribute('checked');
+                    }
+                }
+            }
+
+            for (let i = 1; i <= 40; i++) {
+                let userAns = "";
+                let inputElement = document.getElementById(`q${i}`);
+                
+                if(inputElement) {
+                    userAns = inputElement.value.trim().toLowerCase();
+                } else {
+                    let radios = document.getElementsByName(`q${i}`);
+                    for(let r of radios) {
+                        if(r.checked) userAns = r.value.toLowerCase();
+                        r.disabled = true;
+                    }
+                }
+
+                let targetKey = (answerKey[`q${i}`] || "").toLowerCase();
+                let targetRow = document.getElementById(`block-q${i}`) || document.getElementById(`q${i}`)?.parentElement || document.getElementsByName(`q${i}`)[0]?.parentElement?.parentElement;
+                
+                if (userAns === targetKey) {
+                    score++;
+                    if(targetRow) {
+                        let span = document.createElement('span');
+                        span.className = "correct-ans";
+                        span.innerText = ` ✓ Correct (${answerKey['q'+i]})`;
+                        targetRow.querySelector('.q-main-content')?.appendChild(span) || targetRow.appendChild(span);
+                    }
+                } else {
+                    if(targetRow) {
+                        let span = document.createElement('span');
+                        span.className = "correct-ans";
+                        span.style.color = "red";
+                        span.innerText = ` ✗ Incorrect (Correct: ${answerKey['q'+i]})`;
+                        targetRow.querySelector('.q-main-content')?.appendChild(span) || targetRow.appendChild(span);
+                    }
+                }
+            }
+
+            document.getElementById('score-candidate-name').innerText = document.getElementById('display-name').innerText;
+            document.getElementById('score-raw-out').innerText = `Result: ${score} / 40 Questions`;
+            document.getElementById('score-band-out').innerText = calculateIELTSBand(score);
+            
+            document.getElementById('score-screen').style.display = 'flex';
+            document.getElementById('btn-submit').style.display = 'none';
+            document.getElementById('btn-download').style.display = 'block';
+        }
+
+        function closeScoreScreen() {
+            document.getElementById('score-screen').style.display = 'none';
+            currentPart = 1;
+            changePart(0);
+            document.getElementById('btn-prev').disabled = false;
+            document.getElementById('btn-next').disabled = false;
+            document.getElementById('btn-next').innerText = "Next Part";
+            document.getElementById('btn-next').onclick = () => changePart(1);
+        }
+
+        function calculateIELTSBand(score) {
+            if(score >= 39) return "9.0";
+            if(score >= 37) return "8.5";
+            if(score >= 35) return "8.0";
+            if(score >= 32) return "7.5";
+            if(score >= 30) return "7.0";
+            if(score >= 27) return "6.5";
+            if(score >= 23) return "6.0";
+            if(score >= 19) return "5.5";
+            if(score >= 15) return "5.0";
+            return "Below 5.0";
+        }
+
+        function downloadHTML() {
+            let startScreen = document.getElementById('start-screen');
+            if(startScreen) startScreen.remove();
+            let scoreScreen = document.getElementById('score-screen');
+            if(scoreScreen) scoreScreen.remove();
+
+            let htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            let blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+            let link = document.createElement("a");
+            let name = document.getElementById('display-name').innerText.replace(/\s+/g, '_');
+            link.href = URL.createObjectURL(blob);
+            link.download = `IELTS_Reading_Mastery_Custom_${name}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
